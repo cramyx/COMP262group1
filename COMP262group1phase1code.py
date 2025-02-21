@@ -172,12 +172,13 @@ print(f"Number of reviews that are too long: {len(too_long)}")
 import seaborn as sns
 import html
 import contractions
+# Remove empty reviews
 
-print(df["reviewText"].isnull().sum())  # Check how many nulls exist
+before_empty_removal = len(df)
+df = df[df["reviewText"].notna() & (df["reviewText"] != "")]
+print(f"\nNumber of rows before removing empty reviews: {before_empty_removal}")
+print(f"Number of rows after removing empty reviews: {len(df)}")
 
-df["reviewText"] = df["reviewText"].fillna("")  # Replace NaN with empty string
-
-print(df["reviewText"].isnull().sum())  # Check how many nulls exist
 
 # Pre-processing for VADER
 
@@ -206,23 +207,24 @@ df["reviewText"] = df["reviewText"].apply(
 print("\nSample of 'reviewText' after TextBlob preprocessing:")
 print(df["reviewText"].head(3))
 
-# Remove duplicates
-print(len(df))
-df = df.drop_duplicates(subset=["reviewText", "summary", "sentiment"], keep="first")
-print(len(df))
-# Remove empty reviews
+# Remove outliers
+print(f"\nReview length IQR: {iqr}")
+print(f"Lower bound: {lower_bound}, Upper bound: {upper_bound}")
+before_outlier_removal = len(df)
+df = df[(review_lengths > 0) & (review_lengths <= upper_bound)]
+print(f"Number of rows before removing outliers: {before_outlier_removal}")
+print(f"Number of rows after removing outliers: {len(df)}")
 
-before_empty_removal = len(df)
-df = df[df["reviewText"].notna() & (df["reviewText"] != "")]
-print(f"\nNumber of rows before removing empty reviews: {before_empty_removal}")
-print(f"Number of rows after removing empty reviews: {len(df)}")
-# Remove outliers (if needed)
-df["review_length"] = df["reviewText"].apply(lambda x: len(x.split()))
-q1, q3 = df["review_length"].quantile([0.25, 0.75])
-iqr = q3 - q1
-lower_bound = q1 - 1.5 * iqr
-upper_bound = q3 + 1.5 * iqr
-df = df[(df["review_length"] > 0) & (df["review_length"] <= upper_bound)]
+# Visualize review lengths
+plt.figure(figsize=(12, 6))
+sns.histplot(review_lengths, bins=50, kde=True, color="blue")
+plt.axvline(lower_bound, color="red", linestyle="--", label="Lower Bound")
+plt.axvline(upper_bound, color="green", linestyle="--", label="Upper Bound")
+plt.title("Review Length Distribution (After Removing Outliers)")
+plt.xlabel("Review Length")
+plt.ylabel("Frequency")
+plt.legend()
+plt.show()
 # %% [markdown]
 # ## Model Building
 from textblob import TextBlob
@@ -254,16 +256,7 @@ df = load_json_lines(file_path)
 # Generating sentiment labels from 'overall' ratings
 
 
-def map_sentiment(rating):
-    if rating >= 4:
-        return "Positive"
-    elif rating == 3:
-        return "Neutral"
-    else:
-        return "Negative"
-
-
-df["sentiment"] = df["overall"].apply(map_sentiment)
+df["sentiment"] = df["overall"].apply(label_sentiment)
 
 # Ensure 'reviewText' column has no missing values
 df["reviewText"] = df["reviewText"].fillna("").astype(str)
@@ -336,11 +329,11 @@ print("sentiment_analysis_results.csv saved!")
 
 # Visualizing Model Performance
 
-plt.figure(figsize=(8, 5))
+# plt.figure(figsize=(8, 5))
 df_eval.set_index("Metric").plot(kind="bar", colormap="coolwarm", edgecolor="black")
-plt.title("Model Performance Comparison: VADER vs. TextBlob")
-plt.xlabel("Metric")
-plt.ylabel("Score")
-plt.xticks(rotation=0)
-plt.legend(title="Models")
+# plt.title("Model Performance Comparison: VADER vs. TextBlob")
+# plt.xlabel("Metric")
+# plt.ylabel("Score")
+# plt.xticks(rotation=0)
+# plt.legend(title="Models")
 plt.show()
