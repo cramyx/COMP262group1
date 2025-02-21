@@ -1,0 +1,5 @@
+Metric,VADER,TextBlob
+Accuracy,0.81,0.8
+Precision,0.53,0.47
+Recall,0.52,0.46
+F1-Score,0.52,0.46
