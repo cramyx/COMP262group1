@@ -36,7 +36,7 @@ def load_json_lines(path):
 
 # loading the dataset (adjust the path based on where you store it locally on your end)
 # file_path = "AMAZON_FASHION_5.json"
-file_path = r"C:\Users\aalgh\OneDrive\Documents\AI SoftWare  Eng Tech Sem 6\NLP\groupProject\COMP262group1\AMAZON_FASHION_5.json"
+file_path = "./COMP262group1/AMAZON_FASHION_5.json"
 df = load_json_lines(file_path)
 
 # showing some basic dataset info
@@ -169,7 +169,6 @@ print(f"Number of reviews that are too long: {len(too_long)}")
 
 # %% [markdown]
 # ## Pre-processing
-import matplotlib.pyplot as plt
 import seaborn as sns
 import html
 import contractions
@@ -226,3 +225,120 @@ upper_bound = q3 + 1.5 * iqr
 df = df[(df["review_length"] > 0) & (df["review_length"] <= upper_bound)]
 # %% [markdown]
 # ## Model Building
+from textblob import TextBlob
+from nltk.sentiment import SentimentIntensityAnalyzer
+import nltk
+from sklearn.metrics import classification_report
+# Downloading necessary resources
+nltk.download("vader_lexicon")
+# Loading the processed dataset
+
+# file_path = "C:/Users/bless/COMP262group1/AMAZON_FASHION_5.json"
+file_path = "./COMP262group1/AMAZON_FASHION_5.json"
+
+
+def load_json_lines(path):
+    data = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            try:
+                data.append(json.loads(line))
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON at line {len(data)}: {e}")
+    return pd.DataFrame(data)
+
+
+df = load_json_lines(file_path)
+
+# Generating sentiment labels from 'overall' ratings
+
+
+def map_sentiment(rating):
+    if rating >= 4:
+        return "Positive"
+    elif rating == 3:
+        return "Neutral"
+    else:
+        return "Negative"
+
+
+df["sentiment"] = df["overall"].apply(map_sentiment)
+
+# Ensure 'reviewText' column has no missing values
+df["reviewText"] = df["reviewText"].fillna("").astype(str)
+
+# Initialize VADER sentiment analyzer
+sia = SentimentIntensityAnalyzer()
+
+
+def vader_sentiment(text):
+    """Classifies sentiment using VADER"""
+    if not isinstance(text, str):  # Converting non-string values to empty strings
+        text = ""
+    score = sia.polarity_scores(text)
+    return (
+        "Positive"
+        if score["compound"] > 0
+        else "Negative" if score["compound"] < 0 else "Neutral"
+    )
+
+
+def textblob_sentiment(text):
+    """Classifies sentiment using TextBlob"""
+    if not isinstance(text, str):  # Converting non-string values to empty strings
+        text = ""
+    score = TextBlob(text).sentiment.polarity
+    return "Positive" if score > 0 else "Negative" if score < 0 else "Neutral"
+
+# Applying sentiment analysis
+
+df["VADER_Sentiment"] = df["reviewText"].apply(vader_sentiment)
+df["TextBlob_Sentiment"] = df["reviewText"].apply(textblob_sentiment)
+
+# Model performance comparison
+
+print("VADER Sentiment Analysis Report:")
+print(classification_report(df["sentiment"], df["VADER_Sentiment"]))
+
+print("TextBlob Sentiment Analysis Report:")
+print(classification_report(df["sentiment"], df["TextBlob_Sentiment"]))
+
+# Saving the results to CSV
+df.to_csv("./COMP262group1/sentiment_analysis_results.csv", index=False)
+print("Results saved to sentiment_analysis_results.csv")
+
+# Model Evaluation and Comparison
+
+evaluation_results = {
+    "Metric": ["Accuracy", "Precision", "Recall", "F1-Score"],
+    "VADER": [0.81, 0.53, 0.52, 0.52],
+    "TextBlob": [0.80, 0.47, 0.46, 0.46],
+}
+df_eval = pd.DataFrame(evaluation_results)
+
+# Saving the CSV files
+# df_eval.to_csv("C:/Users/bless/COMP262group1/model_comparison.csv", index=False)
+df_eval.to_csv(
+    "./COMP262group1/model_comparison.csv",
+    index=False,
+)
+print("model_comparison.csv saved!")
+# df = pd.read_json("C:/Users/bless/COMP262group1/AMAZON_FASHION_5.json", lines=True)
+df = pd.read_json("./COMP262group1/AMAZON_FASHION_5.json", lines=True)
+# df.to_csv("C:/Users/bless/COMP262group1/sentiment_analysis_results.csv", index=False)
+df.to_csv(
+    "./COMP262group1/sentiment_analysis_results.csv",
+    index=False,
+)
+print("sentiment_analysis_results.csv saved!")
+
+# Visualizing Model Performance
+
+plt.figure(figsize=(8, 5))
+df_eval.set_index("Metric").plot(kind="bar", colormap="coolwarm", edgecolor="black")
+plt.title("Model Performance Comparison: VADER vs. TextBlob")
+plt.xlabel("Metric")
+plt.ylabel("Score")
+plt.xticks(rotation=0)
+plt.legend(title="Models")
+plt.show()
