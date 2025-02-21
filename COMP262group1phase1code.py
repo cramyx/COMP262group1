@@ -229,6 +229,7 @@ from textblob import TextBlob
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
 from sklearn.metrics import classification_report
+
 # Downloading necessary resources
 nltk.download("vader_lexicon")
 # Loading the processed dataset
@@ -289,6 +290,7 @@ def textblob_sentiment(text):
         text = ""
     score = TextBlob(text).sentiment.polarity
     return "Positive" if score > 0 else "Negative" if score < 0 else "Neutral"
+
 
 # Applying sentiment analysis
 
