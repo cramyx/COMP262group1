@@ -108,7 +108,20 @@ def label_sentiment(rating):
 
 df["sentiment"] = df["overall"].apply(label_sentiment)
 
-print(df['sentiment'].value_counts())
+# Get value counts
+value_counts = df['sentiment'].value_counts()
+print(value_counts)
+
+# Plot for sentiment value counts
+plt.figure(figsize=(6,4))
+value_counts.plot(kind='bar')
+plt.xlabel("Category")
+plt.ylabel("Count")
+plt.title("Value Counts for Sentiment Column")
+plt.xticks(rotation=0)
+plt.show()
+
+# %%
 df.head()
 
 # %%
