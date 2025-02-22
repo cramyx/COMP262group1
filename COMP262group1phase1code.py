@@ -226,8 +226,8 @@ else:
     df = df.copy()
 print(f"Sampled dataset size: {len(df)}")
 
-# Recompute the review_length column in case it's missing
-df["review_length"] = df["reviewText"].apply(lambda x: len(str(x).split()))
+# # Recompute the review_length column in case it's missing
+# df["review_length"] = df["reviewText"].apply(lambda x: len(str(x).split()))
 
 # Visualize review lengths for the sampled data
 plt.figure(figsize=(12, 6))
@@ -260,12 +260,6 @@ nltk.download('vader_lexicon')
 
 
 # In[14]:
-
-
-# Generating sentiment labels from 'overall' ratings
-
-df['reviewText'] = df['reviewText'].fillna("").astype(str)
-
 
 # Initialize VADER sentiment analyzer
 sia = SentimentIntensityAnalyzer()
