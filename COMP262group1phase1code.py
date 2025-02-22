@@ -58,7 +58,7 @@ plt.ylabel("frequency")
 plt.title("distribution of reviews per product")
 plt.show()
 
-# distribution of reviews per user (D)
+# distribution of reviews per user
 reviews_per_user = df.groupby("reviewerID")["reviewText"].count()
 plt.hist(reviews_per_user, bins=50, edgecolor="black")
 plt.xlabel("number of reviews per User")
@@ -66,7 +66,7 @@ plt.ylabel("frequency")
 plt.title("distribution of reviews per user")
 plt.show()
 
-# review length analysis (E & F)
+# review length analysis
 df["review_length"] = df["reviewText"].apply(
     lambda x: len(str(x).split()) if pd.notna(x) else 0
 )
@@ -97,7 +97,6 @@ print(f"dataset size after removing duplicates: {len(df)}")
 # Salma
 
 # Step 2a: Labeling the sentiment
-
 
 def label_sentiment(rating):
     if rating >= 4:
@@ -160,14 +159,6 @@ print(too_long[["reviewText"]].head())
 print(f"\nNumber of reviews that are too short (length 0): {len(too_short)}")
 print(f"Number of reviews that are too long: {len(too_long)}")
 
-# %%
-# Removing both too short and too long reviews (should decide to implement or not)
-
-# df = df[(review_lengths > 0) & (review_lengths <= upper_bound)] # can rename to df_cleaned if needed
-
-# print(f"Number of reviews after removing outliers: {len(df)}")
-
-# %% [markdown]
 # ## Pre-processing
 import seaborn as sns
 import html
@@ -215,6 +206,13 @@ df = df[(review_lengths > 0) & (review_lengths <= upper_bound)]
 print(f"Number of rows before removing outliers: {before_outlier_removal}")
 print(f"Number of rows after removing outliers: {len(df)}")
 
+# Randomly select 1000 reviews from the cleaned dataset
+if len(df) >= 1000:
+    df = df.sample(n=1000, random_state=42)
+else:
+    df = df.copy()
+print(f"Sampled dataset size: {len(df)}")
+
 # Visualize review lengths
 plt.figure(figsize=(12, 6))
 sns.histplot(review_lengths, bins=50, kde=True, color="blue")
@@ -225,7 +223,7 @@ plt.xlabel("Review Length")
 plt.ylabel("Frequency")
 plt.legend()
 plt.show()
-# %% [markdown]
+
 # ## Model Building
 from textblob import TextBlob
 from nltk.sentiment import SentimentIntensityAnalyzer
@@ -234,33 +232,6 @@ from sklearn.metrics import classification_report
 
 # Downloading necessary resources
 nltk.download("vader_lexicon")
-# Loading the processed dataset
-
-# file_path = "C:/Users/bless/COMP262group1/AMAZON_FASHION_5.json"
-file_path = "./COMP262group1/AMAZON_FASHION_5.json"
-
-
-def load_json_lines(path):
-    data = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            try:
-                data.append(json.loads(line))
-            except json.JSONDecodeError as e:
-                print(f"Error decoding JSON at line {len(data)}: {e}")
-    return pd.DataFrame(data)
-
-
-df = load_json_lines(file_path)
-
-# Generating sentiment labels from 'overall' ratings
-
-
-df["sentiment"] = df["overall"].apply(label_sentiment)
-
-# Ensure 'reviewText' column has no missing values
-df["reviewText"] = df["reviewText"].fillna("").astype(str)
-
 # Initialize VADER sentiment analyzer
 sia = SentimentIntensityAnalyzer()
 
