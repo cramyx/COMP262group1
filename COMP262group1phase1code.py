@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 # ## Data Exploration
 
 # %%
-# -*- coding: utf-8 -*-
 """
 Created on Thu Feb 13 18:21:29 2025
 
@@ -20,11 +19,10 @@ Created on Thu Feb 13 18:21:29 2025
 
 # DELIVERABLE 1)
 
-
 # creating a function to load line-delimited json
 def load_json_lines(path):
     data = []
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, 'r', encoding='utf-8') as f:
         for line in f:
             try:
                 data.append(json.loads(line))
@@ -33,10 +31,8 @@ def load_json_lines(path):
 
     return pd.DataFrame(data)
 
-
 # loading the dataset (adjust the path based on where you store it locally on your end)
-# file_path = "AMAZON_FASHION_5.json"
-file_path = "./COMP262group1/AMAZON_FASHION_5.json"
+file_path = "AMAZON_FASHION_5.json"
 df = load_json_lines(file_path)
 
 # showing some basic dataset info
@@ -48,7 +44,7 @@ print(f"total reviews: {len(df)}")
 print(f"total unique products: {df['asin'].nunique()}")
 print(f"total unique users: {df['reviewerID'].nunique()}")
 print(f"average rating: {df['overall'].mean():.2f}")
-print(df["overall"].value_counts(normalize=True) * 100)
+print(df['overall'].value_counts(normalize=True) * 100)
 
 # distribution of reviews per product (B & C)
 reviews_per_product = df.groupby("asin")["reviewText"].count()
@@ -58,7 +54,7 @@ plt.ylabel("frequency")
 plt.title("distribution of reviews per product")
 plt.show()
 
-# distribution of reviews per user
+# distribution of reviews per user (D)
 reviews_per_user = df.groupby("reviewerID")["reviewText"].count()
 plt.hist(reviews_per_user, bins=50, edgecolor="black")
 plt.xlabel("number of reviews per User")
@@ -66,10 +62,8 @@ plt.ylabel("frequency")
 plt.title("distribution of reviews per user")
 plt.show()
 
-# review length analysis
-df["review_length"] = df["reviewText"].apply(
-    lambda x: len(str(x).split()) if pd.notna(x) else 0
-)
+# review length analysis (E & F)
+df["review_length"] = df["reviewText"].apply(lambda x: len(str(x).split()) if pd.notna(x) else 0)
 print(f"average review length (words): {df['review_length'].mean():.2f}")
 print(f"max review length: {df['review_length'].max()}")
 print(f"min review length: {df['review_length'].min()}")
@@ -79,23 +73,29 @@ plt.ylabel("frequency")
 plt.title("distribution of review lengths")
 plt.show()
 
-# checking for duplicates and dropping duplicates (G) (this could be moved to the front
-# of the script so that the duplicates are removed first before other analysis, up
-# to you guys)
+# checking for duplicates and dropping duplicates
 print(f"initial dataset size: {len(df)}")
-duplicates = df[df.duplicated(subset=["reviewText", "reviewerID", "asin"], keep=False)]
+duplicates = df[
+    df.duplicated(
+        subset=["reviewText", "reviewerID", "asin", "unixReviewTime"], keep=False
+    )
+]
 print(f"number of duplicate reviews: {len(duplicates)}")
-df = df.drop_duplicates(subset=["reviewText", "reviewerID", "asin"], keep="first")
+df = df.drop_duplicates(
+    subset=["reviewText", "reviewerID", "asin", "unixReviewTime"], keep="first"
+)
+
+df = df.drop_duplicates(
+    subset=["reviewText", "reviewerID", "asin", "unixReviewTime"], keep="first"
+)
+
 # updated dataset size after removing duplicates
 print(f"dataset size after removing duplicates: {len(df)}")
-
 
 # %% [markdown]
 # ## Text Pre-processing
 
 # %%
-# Salma
-
 # Step 2a: Labeling the sentiment
 
 def label_sentiment(rating):
@@ -106,16 +106,15 @@ def label_sentiment(rating):
     else:
         return "Negative"
 
-
 df["sentiment"] = df["overall"].apply(label_sentiment)
 
-print(df["sentiment"].value_counts())
+print(df['sentiment'].value_counts())
 df.head()
 
 # %%
 # Step 2b: Selecting columns for sentiment analysis
 selected_columns = ["reviewText", "summary", "sentiment"]
-df = df[selected_columns]  # can rename to df_selected if needed
+df = df[selected_columns] # can rename to df_selected if needed
 
 # Justification:
 # - 'reviewText': Main body of the review, containing the most valuable sentiment information.
@@ -125,9 +124,7 @@ df = df[selected_columns]  # can rename to df_selected if needed
 
 # %%
 # Step 2c: Checking for outliers in review length
-review_lengths = df["reviewText"].apply(
-    lambda x: len(str(x).split()) if pd.notna(x) else 0
-)
+review_lengths = df["reviewText"].apply(lambda x: len(str(x).split()) if pd.notna(x) else 0)
 
 # Boxplot of Review Lengths
 plt.boxplot(review_lengths)
@@ -159,10 +156,15 @@ print(too_long[["reviewText"]].head())
 print(f"\nNumber of reviews that are too short (length 0): {len(too_short)}")
 print(f"Number of reviews that are too long: {len(too_long)}")
 
+# %% [markdown]
 # ## Pre-processing
+
+# %%
 import seaborn as sns
 import html
 import contractions
+
+# %%
 # Remove empty reviews
 
 before_empty_removal = len(df)
@@ -170,7 +172,7 @@ df = df[df["reviewText"].notna() & (df["reviewText"] != "")]
 print(f"\nNumber of rows before removing empty reviews: {before_empty_removal}")
 print(f"Number of rows after removing empty reviews: {len(df)}")
 
-
+# %%
 # Pre-processing for VADER
 
 print("\nSample of 'reviewText' before VADER preprocessing:")
@@ -183,8 +185,8 @@ df["reviewText"] = df["reviewText"].apply(
 print("\nSample of 'reviewText' after VADER preprocessing:")
 print(df["reviewText"].head(3))
 
+# %%
 # Pre-processing for TextBlob
-
 
 print("\nSample of 'reviewText' before TextBlob preprocessing:")
 print(df["reviewText"].head(3))  # Print first 3 rows
@@ -198,6 +200,7 @@ df["reviewText"] = df["reviewText"].apply(
 print("\nSample of 'reviewText' after TextBlob preprocessing:")
 print(df["reviewText"].head(3))
 
+# %%
 # Remove outliers
 print(f"\nReview length IQR: {iqr}")
 print(f"Lower bound: {lower_bound}, Upper bound: {upper_bound}")
@@ -224,29 +227,29 @@ plt.ylabel("Frequency")
 plt.legend()
 plt.show()
 
+# %% [markdown]
 # ## Model Building
+
+# %%
 from textblob import TextBlob
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
 from sklearn.metrics import classification_report
 
+# %%
 # Downloading necessary resources
-nltk.download("vader_lexicon")
+nltk.download('vader_lexicon')
+
+# %%
 # Initialize VADER sentiment analyzer
 sia = SentimentIntensityAnalyzer()
-
 
 def vader_sentiment(text):
     """Classifies sentiment using VADER"""
     if not isinstance(text, str):  # Converting non-string values to empty strings
         text = ""
     score = sia.polarity_scores(text)
-    return (
-        "Positive"
-        if score["compound"] > 0
-        else "Negative" if score["compound"] < 0 else "Neutral"
-    )
-
+    return "Positive" if score['compound'] > 0 else "Negative" if score['compound'] < 0 else "Neutral"
 
 def textblob_sentiment(text):
     """Classifies sentiment using TextBlob"""
@@ -255,56 +258,62 @@ def textblob_sentiment(text):
     score = TextBlob(text).sentiment.polarity
     return "Positive" if score > 0 else "Negative" if score < 0 else "Neutral"
 
-
+# %%
 # Applying sentiment analysis
 
-df["VADER_Sentiment"] = df["reviewText"].apply(vader_sentiment)
-df["TextBlob_Sentiment"] = df["reviewText"].apply(textblob_sentiment)
+df['VADER_Sentiment'] = df['reviewText'].apply(vader_sentiment)
+df['TextBlob_Sentiment'] = df['reviewText'].apply(textblob_sentiment)
 
+# %%
 # Model performance comparison
 
 print("VADER Sentiment Analysis Report:")
-print(classification_report(df["sentiment"], df["VADER_Sentiment"]))
+print(classification_report(df['sentiment'], df['VADER_Sentiment']))
 
 print("TextBlob Sentiment Analysis Report:")
-print(classification_report(df["sentiment"], df["TextBlob_Sentiment"]))
+print(classification_report(df['sentiment'], df['TextBlob_Sentiment']))
 
+# %%
 # Saving the results to CSV
-df.to_csv("./COMP262group1/sentiment_analysis_results.csv", index=False)
+df.to_csv("sentiment_analysis_results.csv", index=False)
 print("Results saved to sentiment_analysis_results.csv")
 
+# %%
 # Model Evaluation and Comparison
 
 evaluation_results = {
     "Metric": ["Accuracy", "Precision", "Recall", "F1-Score"],
-    "VADER": [0.81, 0.53, 0.52, 0.52],
-    "TextBlob": [0.80, 0.47, 0.46, 0.46],
+    "VADER": [0.81, 0.53, 0.52, 0.52],  
+    "TextBlob": [0.80, 0.47, 0.46, 0.46] 
 }
 df_eval = pd.DataFrame(evaluation_results)
 
 # Saving the CSV files
-# df_eval.to_csv("C:/Users/bless/COMP262group1/model_comparison.csv", index=False)
+
 df_eval.to_csv(
-    "./COMP262group1/model_comparison.csv",
+    "model_comparison.csv",
     index=False,
 )
 print("model_comparison.csv saved!")
-# df = pd.read_json("C:/Users/bless/COMP262group1/AMAZON_FASHION_5.json", lines=True)
-df = pd.read_json("./COMP262group1/AMAZON_FASHION_5.json", lines=True)
-# df.to_csv("C:/Users/bless/COMP262group1/sentiment_analysis_results.csv", index=False)
+
+df = pd.read_json("AMAZON_FASHION_5.json", lines=True)
+
 df.to_csv(
-    "./COMP262group1/sentiment_analysis_results.csv",
+    "sentiment_analysis_results.csv",
     index=False,
 )
 print("sentiment_analysis_results.csv saved!")
 
+# %%
 # Visualizing Model Performance
 
-# plt.figure(figsize=(8, 5))
+plt.figure(figsize=(8, 5))
 df_eval.set_index("Metric").plot(kind="bar", colormap="coolwarm", edgecolor="black")
-# plt.title("Model Performance Comparison: VADER vs. TextBlob")
-# plt.xlabel("Metric")
-# plt.ylabel("Score")
-# plt.xticks(rotation=0)
-# plt.legend(title="Models")
+plt.title("Model Performance Comparison: VADER vs. TextBlob")
+plt.xlabel("Metric")
+plt.ylabel("Score")
+plt.xticks(rotation=0)
+plt.legend(title="Models")
 plt.show()
+
+
