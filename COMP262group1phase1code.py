@@ -52,6 +52,7 @@ plt.ylabel("frequency")
 plt.title("distribution of reviews per product")
 plt.show()
 
+
 # Distribution of reviews per user
 reviews_per_user = df.groupby("reviewerID")["reviewText"].count()
 plt.hist(reviews_per_user, bins=50, edgecolor="black")
@@ -60,8 +61,11 @@ plt.ylabel("frequency")
 plt.title("distribution of reviews per user")
 plt.show()
 
-# Review length analysis
-df["review_length"] = df["reviewText"].apply(lambda x: len(str(x).split()) if pd.notna(x) else 0)
+# review length analysis
+df["review_length"] = df["reviewText"].apply(
+    lambda x: len(str(x).split()) if pd.notna(x) else 0
+)
+
 print(f"average review length (words): {df['review_length'].mean():.2f}")
 print(f"max review length: {df['review_length'].max()}")
 print(f"min review length: {df['review_length'].min()}")
@@ -84,7 +88,9 @@ print(f"dataset size after removing duplicates: {len(df)}")
 # In[3]:
 
 
+
 # Step 2a: Labeling the sentiment
+
 
 def label_sentiment(rating):
     if rating >= 4:
@@ -157,7 +163,6 @@ print(f"Number of reviews that are too long: {len(too_long)}")
 
 # In[6]:
 
-
 import seaborn as sns
 import html
 import contractions
@@ -226,10 +231,9 @@ else:
     df = df.copy()
 print(f"Sampled dataset size: {len(df)}")
 
-# # Recompute the review_length column in case it's missing
-# df["review_length"] = df["reviewText"].apply(lambda x: len(str(x).split()))
+# Visualize review lengths
 
-# Visualize review lengths for the sampled data
+
 plt.figure(figsize=(12, 6))
 sns.histplot(df["review_length"], bins=50, kde=True, color="blue")
 plt.axvline(lower_bound, color="red", linestyle="--", label="Lower Bound")
@@ -252,14 +256,8 @@ import nltk
 from sklearn.metrics import classification_report
 
 
-# In[12]:
-
-
 # Downloading necessary resources
-nltk.download('vader_lexicon')
-
-
-# In[14]:
+nltk.download("vader_lexicon")
 
 # Initialize VADER sentiment analyzer
 sia = SentimentIntensityAnalyzer()
