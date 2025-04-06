@@ -1,19 +1,21 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr 6 14:18:49 2025
-
-@author: coles
-"""
-
+# %%
 #PROJECT PHASE 2
 #GROUP 1 (AMAZON FASHION)
 
+# %%
 import pandas as pd
+import numpy as np
 import json
 import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import classification_report, confusion_matrix
 
-#DELIVERABLE 1) DATA EXPLORATION & PREPROCESSING
+# %% [markdown]
+# # Data Exploration & Preprocessing
 
+# %%
 # loading a subset of the full dataset
 def load_json_lines(path, limit=5000):
     data = []
@@ -27,7 +29,7 @@ def load_json_lines(path, limit=5000):
     return pd.DataFrame(data)
 
 # loading full Amazon Fashion dataset subset
-file_path = "C:/Users/coles/Downloads/AMAZON_FASHION.json/AMAZON_FASHION.json"
+file_path = "AMAZON_FASHION.json"
 df = load_json_lines(file_path, limit=5000)
 print(f"Loaded {len(df)} reviews.")
 
@@ -97,3 +99,172 @@ df = df[["reviewText", "sentiment"]]
 # final overview
 print("Sample labeled data:")
 print(df.head(10))
+
+# %% [markdown]
+# # Text Representation & Data Splitting
+
+# %%
+# Check class distribution
+print(df['sentiment'].value_counts())
+
+# Plot the distribution of sentiments
+plt.figure(figsize=(6, 4))
+df['sentiment'].value_counts().plot(kind='bar')
+plt.title('Sentiment Class Distribution')
+plt.xlabel('Sentiment')
+plt.ylabel('Count')
+plt.xticks(rotation=0)
+plt.show()
+
+# %%
+# Text Representation
+# Apply TF-IDF Vectorizer to 'reviewText' column
+vectorizer = TfidfVectorizer(max_features=5000)
+X = vectorizer.fit_transform(df["reviewText"])
+
+# Original labels (non-encoded)
+y_orig = df['sentiment']
+
+# %%
+# # Another vectorizer if you want to experiment
+
+# from sklearn.feature_extraction.text import CountVectorizer
+
+# # Apply Count Vectorizer
+# vectorizer = CountVectorizer(max_features=5000)
+# X = vectorizer.fit_transform(df["reviewText"])  # Convert text data into features
+
+# # Original labels (non-encoded)
+# y_orig = df['sentiment']
+
+# %%
+# Encode labels for models like XGBoost, MLP, etc.
+le = LabelEncoder()
+y_encoded = le.fit_transform(y_orig)
+
+# Split the dataset into features (X) and labels (y) first, and make sure we are stratifying based on the labels
+# 70% Training and 30% Testing with encoded labels for models that require encoding
+X_train_enc, X_test_enc, y_train_enc, y_test_enc = train_test_split(X, y_encoded, test_size=0.3, stratify=y_encoded, random_state=42)
+
+# 70% Training and 30% Testing with original labels for models that don't require encoding
+X_train_orig, X_test_orig, y_train_orig, y_test_orig = train_test_split(X, y_orig, test_size=0.3, stratify=y_orig, random_state=42)
+
+# There is (choose which one to use based on the model):
+# 1. Encoded splits: X_train_enc, X_test_enc, y_train_enc, y_test_enc
+# 2. Original splits: X_train_orig, X_test_orig, y_train_orig, y_test_orig
+
+# %%
+from imblearn.over_sampling import SMOTE
+
+# Applying SMOTE only on the training set to balance the classes
+smote = SMOTE(random_state=42)
+
+# Apply SMOTE on the encoded labels training set
+X_train_enc_smote, y_train_enc_smote = smote.fit_resample(X_train_enc, y_train_enc)
+
+# Apply SMOTE on the original labels training set
+X_train_orig_smote, y_train_orig_smote = smote.fit_resample(X_train_orig, y_train_orig)
+
+# Print class distribution after SMOTE
+smote_counts = pd.Series(y_train_enc_smote).value_counts().sort_index()
+smote_labels = le.inverse_transform(smote_counts.index)
+
+print("\nClass distribution after SMOTE:")
+for label, count in zip(smote_labels, smote_counts):
+    print(f"{label}: {count}")
+    
+# print total number of samples after SMOTE
+print(f"Total samples after SMOTE: {X_train_enc_smote.shape[0]}")
+
+# %% [markdown]
+# # Gradient Boost (extra model, can remove later)
+
+# %%
+# Gradient Boosting Classifier using sklearn WITHOUT SMOTE
+from sklearn.ensemble import GradientBoostingClassifier
+
+# Train on original encoded training data
+gb_model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
+gb_model.fit(X_train_enc, y_train_enc)
+y_pred = gb_model.predict(X_test_enc)
+
+# Evaluation using original labels
+print("Gradient Boosting With Sklearn (Original Data) Classification Report:")
+print(classification_report(y_test_enc, y_pred, target_names=le.classes_))
+
+print("Confusion Matrix:")
+print(confusion_matrix(y_test_enc, y_pred))
+
+print("\nGradient Boosting Classifier Accuracy:")
+print(gb_model.score(X_test_enc, y_test_enc))
+
+# %%
+# Train with SMOTE-balanced training data
+gb_model_smote = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
+gb_model_smote.fit(X_train_enc_smote, y_train_enc_smote)
+y_pred_smote = gb_model_smote.predict(X_test_enc)
+
+# Evaluation using original labels
+print("\nGradient Boosting With Sklearn (With SMOTE) Classification Report:")
+print(classification_report(y_test_enc, y_pred_smote, target_names=le.classes_))
+
+print("Confusion Matrix:")
+print(confusion_matrix(y_test_enc, y_pred_smote))
+
+print("\nGradient Boosting Classifier Accuracy (With SMOTE):")
+print(gb_model_smote.score(X_test_enc, y_test_enc))
+
+# %%
+# Gradient Boosting Classifier using XGBoost WITHOUT SMOTE
+from xgboost import XGBClassifier
+
+# Fit the model on original data
+xgb_model = XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=4, random_state=42, use_label_encoder=False, eval_metric='mlogloss')
+xgb_model.fit(X_train_orig, y_train_enc)  # Train with encoded labels
+y_pred = xgb_model.predict(X_test_orig)  # Predict using the test set with original labels
+
+# Inverse transform the predictions back to original labels
+y_pred_labels = le.inverse_transform(y_pred)
+
+# Evaluation
+print("XGBoost Classification Report (Without SMOTE):")
+print(classification_report(y_test_orig, y_pred_labels))
+
+print("Confusion Matrix (Without SMOTE):")
+print(confusion_matrix(y_test_orig, y_pred_labels))
+
+print("\nXGBoost Classifier Accuracy (Without SMOTE):")
+print(xgb_model.score(X_test_orig, y_test_enc))  # Use encoded labels for score calculation
+
+# %%
+# Fit the model on SMOTE balanced data
+xgb_model_smote = XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=4, random_state=42, use_label_encoder=False, eval_metric='mlogloss')
+xgb_model_smote.fit(X_train_enc_smote, y_train_enc_smote)  # Train with SMOTE balanced data
+y_pred_smote = xgb_model_smote.predict(X_test_orig)  # Predict using the original test data (no SMOTE)
+
+# Inverse transform the predictions back to original labels
+y_pred_smote_labels = le.inverse_transform(y_pred_smote)
+
+# Evaluation after SMOTE
+print("XGBoost Classification Report (With SMOTE):")
+print(classification_report(y_test_orig, y_pred_smote_labels))
+
+print("Confusion Matrix (With SMOTE):")
+print(confusion_matrix(y_test_orig, y_pred_smote_labels))
+
+print("\nXGBoost Classifier Accuracy (With SMOTE):")
+print(xgb_model_smote.score(X_test_orig, y_test_enc))  # Use encoded labels for score calculation
+
+# %% [markdown]
+# # Model 1
+
+# %%
+
+
+# %% [markdown]
+# # Model 2
+
+# %%
+
+
+
