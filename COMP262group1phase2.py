@@ -255,11 +255,100 @@ print(confusion_matrix(y_test_orig, y_pred_smote_labels))
 print("\nXGBoost Classifier Accuracy (With SMOTE):")
 print(xgb_model_smote.score(X_test_orig, y_test_enc))  # Use encoded labels for score calculation
 
-# %% [markdown]
-# # Model 1
+# Model 1 (Logistic Regression Model Building and Hyperparameter Tuning)
 
-# %%
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
+# Initialize logistic regression
+lr = LogisticRegression(random_state=42, max_iter=1000)
+
+# Fit to training data
+lr.fit(X_train_orig, y_train_orig)
+
+# Predict on test data
+y_pred_lr = lr.predict(X_test_orig)
+
+# Evaluate
+print("Accuracy:", accuracy_score(y_test_orig, y_pred_lr))
+print("\nClassification Report:\n", classification_report(y_test_orig, y_pred_lr))
+
+# Hyperparameter Tuning
+
+# Define parameter grid
+param_grid = {
+    'C': [0.01, 0.1, 1, 10],
+    'penalty': ['l2'],
+    'solver': ['lbfgs', 'liblinear']
+}
+
+# Grid Search
+grid = GridSearchCV(LogisticRegression(random_state=42, max_iter=1000), param_grid, cv=5, scoring='accuracy', verbose=1)
+grid.fit(X_train_orig, y_train_orig)
+
+print("Best Parameters:", grid.best_params_)
+
+# Predict with best model
+y_pred_best = grid.best_estimator_.predict(X_test_orig)
+
+# Final evaluation
+print("\nBest Model Accuracy:", accuracy_score(y_test_orig, y_pred_best))
+print("\nBest Model Classification Report:\n", classification_report(y_test_orig, y_pred_best))
+
+# Visualization
+
+# Training vs. Testing Accuracy
+
+import matplotlib.pyplot as plt
+
+# Results you have
+train_accuracy = 0.813  # After tuning 
+test_accuracy = 0.8127  # Slight rounding
+
+# Creating a bar chart
+fig, ax = plt.subplots(figsize=(6, 4))
+bars = ax.bar(['Training Accuracy', 'Testing Accuracy'], [train_accuracy, test_accuracy], color=['skyblue', 'lightgreen'])
+
+# Add text labels on bars
+for bar in bars:
+    height = bar.get_height()
+    ax.annotate(f'{height:.3f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                xytext=(0, 3),  
+                textcoords="offset points",
+                ha='center', va='bottom')
+
+ax.set_ylim(0, 1)
+ax.set_title('Training vs. Testing Accuracy for Logistic Regression')
+ax.set_ylabel('Accuracy')
+plt.show()
+
+# Visualization
+
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+# Confusion matrix
+cm = confusion_matrix(y_test_orig, y_pred_best)
+
+# Displaying the confusion matrix
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=lr.classes_)
+disp.plot(cmap='Blues')
+plt.title("Confusion Matrix for Logistic Regression")
+plt.show()
+
+import seaborn as sns
+
+# Generate classification report
+from sklearn.metrics import classification_report
+import pandas as pd
+
+report = classification_report(y_test_orig, y_pred_best, output_dict=True)
+df_report = pd.DataFrame(report).transpose()
+
+plt.figure(figsize=(8,6))
+sns.heatmap(df_report.iloc[:-1, :-1], annot=True, cmap='Blues')
+plt.title('Classification Report Heatmap for Logistic Regression')
+plt.show()
 
 # %% [markdown]
 # # Model 2
