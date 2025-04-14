@@ -1,6 +1,6 @@
 # %%
-#PROJECT PHASE 2
-#GROUP 1 (AMAZON FASHION)
+# PROJECT PHASE 2
+# GROUP 1 (AMAZON FASHION)
 
 # %%
 import pandas as pd
@@ -15,21 +15,25 @@ from sklearn.metrics import classification_report, confusion_matrix
 # %% [markdown]
 # # Data Exploration & Preprocessing
 
+
 # %%
 # loading a subset of the full dataset
 def load_json_lines(path, limit=5000):
     data = []
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         for i, line in enumerate(f):
-            if i >= limit: break
+            if i >= limit:
+                break
             try:
                 data.append(json.loads(line))
             except json.JSONDecodeError as e:
                 print(f"Error decoding JSON at line {i}: {e}")
     return pd.DataFrame(data)
 
+
 # loading full Amazon Fashion dataset subset
-file_path = "AMAZON_FASHION.json"
+file_path = "AMAZON_FASHION_5.json"
+# file_path = r"C:\Users\aalgh\OneDrive\Documents\AI SoftWare  Eng Tech Sem 6\NLP\final project\COMP262group1\AMAZON_FASHION_5.json"
 df = load_json_lines(file_path, limit=5000)
 print(f"Loaded {len(df)} reviews.")
 
@@ -39,17 +43,19 @@ print(df.head())
 print(f"Total unique products: {df['asin'].nunique()}")
 print(f"Total unique users: {df['reviewerID'].nunique()}")
 print(f"Average rating: {df['overall'].mean():.2f}")
-print(df['overall'].value_counts(normalize=True) * 100)
+print(df["overall"].value_counts(normalize=True) * 100)
 
 # review Length Analysis
-df["review_length"] = df["reviewText"].apply(lambda x: len(str(x).split()) if pd.notna(x) else 0)
+df["review_length"] = df["reviewText"].apply(
+    lambda x: len(str(x).split()) if pd.notna(x) else 0
+)
 print(f"Average review length: {df['review_length'].mean():.2f}")
 print(f"Max: {df['review_length'].max()} | Min: {df['review_length'].min()}")
 
 # distribution visualizations
 # reviews per product
 reviews_per_product = df.groupby("asin")["reviewText"].count()
-plt.hist(reviews_per_product, bins=50, edgecolor='black')
+plt.hist(reviews_per_product, bins=50, edgecolor="black")
 plt.title("Distribution of Reviews per Product")
 plt.xlabel("Reviews per Product")
 plt.ylabel("Frequency")
@@ -57,14 +63,14 @@ plt.show()
 
 # reviews per user
 reviews_per_user = df.groupby("reviewerID")["reviewText"].count()
-plt.hist(reviews_per_user, bins=50, edgecolor='black')
+plt.hist(reviews_per_user, bins=50, edgecolor="black")
 plt.title("Distribution of Reviews per User")
 plt.xlabel("Reviews per User")
 plt.ylabel("Frequency")
 plt.show()
 
 # review length distribution
-plt.hist(df["review_length"], bins=50, edgecolor='black')
+plt.hist(df["review_length"], bins=50, edgecolor="black")
 plt.title("Distribution of Review Lengths")
 plt.xlabel("Word Count")
 plt.ylabel("Frequency")
@@ -74,11 +80,12 @@ plt.show()
 print(f"Initial dataset size: {len(df)}")
 duplicates = df[df.duplicated(subset=["reviewText", "reviewerID", "asin"], keep=False)]
 print(f"Duplicate reviews found: {len(duplicates)}")
-df = df.drop_duplicates(subset=["reviewText", "reviewerID", "asin"], keep='first')
+df = df.drop_duplicates(subset=["reviewText", "reviewerID", "asin"], keep="first")
 print(f"Dataset size after removing duplicates: {len(df)}")
 
 # removing empty reviews
 df = df[df["reviewText"].notna() & (df["reviewText"] != "")]
+
 
 # label sentiment
 def label_sentiment(score):
@@ -88,6 +95,7 @@ def label_sentiment(score):
         return "Neutral"
     else:
         return "Negative"
+
 
 df["sentiment"] = df["overall"].apply(label_sentiment)
 df["reviewText"] = df["reviewText"].str.lower()
@@ -105,14 +113,14 @@ print(df.head(10))
 
 # %%
 # Check class distribution
-print(df['sentiment'].value_counts())
+print(df["sentiment"].value_counts())
 
 # Plot the distribution of sentiments
 plt.figure(figsize=(6, 4))
-df['sentiment'].value_counts().plot(kind='bar')
-plt.title('Sentiment Class Distribution')
-plt.xlabel('Sentiment')
-plt.ylabel('Count')
+df["sentiment"].value_counts().plot(kind="bar")
+plt.title("Sentiment Class Distribution")
+plt.xlabel("Sentiment")
+plt.ylabel("Count")
 plt.xticks(rotation=0)
 plt.show()
 
@@ -123,7 +131,7 @@ vectorizer = TfidfVectorizer(max_features=5000)
 X = vectorizer.fit_transform(df["reviewText"])
 
 # Original labels (non-encoded)
-y_orig = df['sentiment']
+y_orig = df["sentiment"]
 
 # %%
 # # Another vectorizer if you want to experiment
@@ -144,10 +152,14 @@ y_encoded = le.fit_transform(y_orig)
 
 # Split the dataset into features (X) and labels (y) first, and make sure we are stratifying based on the labels
 # 70% Training and 30% Testing with encoded labels for models that require encoding
-X_train_enc, X_test_enc, y_train_enc, y_test_enc = train_test_split(X, y_encoded, test_size=0.3, stratify=y_encoded, random_state=42)
+X_train_enc, X_test_enc, y_train_enc, y_test_enc = train_test_split(
+    X, y_encoded, test_size=0.3, stratify=y_encoded, random_state=42
+)
 
 # 70% Training and 30% Testing with original labels for models that don't require encoding
-X_train_orig, X_test_orig, y_train_orig, y_test_orig = train_test_split(X, y_orig, test_size=0.3, stratify=y_orig, random_state=42)
+X_train_orig, X_test_orig, y_train_orig, y_test_orig = train_test_split(
+    X, y_orig, test_size=0.3, stratify=y_orig, random_state=42
+)
 
 # There is (choose which one to use based on the model):
 # 1. Encoded splits: X_train_enc, X_test_enc, y_train_enc, y_test_enc
@@ -172,7 +184,7 @@ smote_labels = le.inverse_transform(smote_counts.index)
 print("\nClass distribution after SMOTE:")
 for label, count in zip(smote_labels, smote_counts):
     print(f"{label}: {count}")
-    
+
 # print total number of samples after SMOTE
 print(f"Total samples after SMOTE: {X_train_enc_smote.shape[0]}")
 
@@ -184,7 +196,9 @@ print(f"Total samples after SMOTE: {X_train_enc_smote.shape[0]}")
 from sklearn.ensemble import GradientBoostingClassifier
 
 # Train on original encoded training data
-gb_model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
+gb_model = GradientBoostingClassifier(
+    n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42
+)
 gb_model.fit(X_train_enc, y_train_enc)
 y_pred = gb_model.predict(X_test_enc)
 
@@ -200,7 +214,9 @@ print(gb_model.score(X_test_enc, y_test_enc))
 
 # %%
 # Train with SMOTE-balanced training data
-gb_model_smote = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
+gb_model_smote = GradientBoostingClassifier(
+    n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42
+)
 gb_model_smote.fit(X_train_enc_smote, y_train_enc_smote)
 y_pred_smote = gb_model_smote.predict(X_test_enc)
 
@@ -219,9 +235,18 @@ print(gb_model_smote.score(X_test_enc, y_test_enc))
 from xgboost import XGBClassifier
 
 # Fit the model on original data
-xgb_model = XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=4, random_state=42, use_label_encoder=False, eval_metric='mlogloss')
+xgb_model = XGBClassifier(
+    n_estimators=100,
+    learning_rate=0.1,
+    max_depth=4,
+    random_state=42,
+    use_label_encoder=False,
+    eval_metric="mlogloss",
+)
 xgb_model.fit(X_train_orig, y_train_enc)  # Train with encoded labels
-y_pred = xgb_model.predict(X_test_orig)  # Predict using the test set with original labels
+y_pred = xgb_model.predict(
+    X_test_orig
+)  # Predict using the test set with original labels
 
 # Inverse transform the predictions back to original labels
 y_pred_labels = le.inverse_transform(y_pred)
@@ -234,13 +259,26 @@ print("Confusion Matrix (Without SMOTE):")
 print(confusion_matrix(y_test_orig, y_pred_labels))
 
 print("\nXGBoost Classifier Accuracy (Without SMOTE):")
-print(xgb_model.score(X_test_orig, y_test_enc))  # Use encoded labels for score calculation
+print(
+    xgb_model.score(X_test_orig, y_test_enc)
+)  # Use encoded labels for score calculation
 
 # %%
 # Fit the model on SMOTE balanced data
-xgb_model_smote = XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=4, random_state=42, use_label_encoder=False, eval_metric='mlogloss')
-xgb_model_smote.fit(X_train_enc_smote, y_train_enc_smote)  # Train with SMOTE balanced data
-y_pred_smote = xgb_model_smote.predict(X_test_orig)  # Predict using the original test data (no SMOTE)
+xgb_model_smote = XGBClassifier(
+    n_estimators=100,
+    learning_rate=0.1,
+    max_depth=4,
+    random_state=42,
+    use_label_encoder=False,
+    eval_metric="mlogloss",
+)
+xgb_model_smote.fit(
+    X_train_enc_smote, y_train_enc_smote
+)  # Train with SMOTE balanced data
+y_pred_smote = xgb_model_smote.predict(
+    X_test_orig
+)  # Predict using the original test data (no SMOTE)
 
 # Inverse transform the predictions back to original labels
 y_pred_smote_labels = le.inverse_transform(y_pred_smote)
@@ -253,7 +291,9 @@ print("Confusion Matrix (With SMOTE):")
 print(confusion_matrix(y_test_orig, y_pred_smote_labels))
 
 print("\nXGBoost Classifier Accuracy (With SMOTE):")
-print(xgb_model_smote.score(X_test_orig, y_test_enc))  # Use encoded labels for score calculation
+print(
+    xgb_model_smote.score(X_test_orig, y_test_enc)
+)  # Use encoded labels for score calculation
 
 # Model 1 (Logistic Regression Model Building and Hyperparameter Tuning)
 
@@ -278,13 +318,19 @@ print("\nClassification Report:\n", classification_report(y_test_orig, y_pred_lr
 
 # Define parameter grid
 param_grid = {
-    'C': [0.01, 0.1, 1, 10],
-    'penalty': ['l2'],
-    'solver': ['lbfgs', 'liblinear']
+    "C": [0.01, 0.1, 1, 10],
+    "penalty": ["l2"],
+    "solver": ["lbfgs", "liblinear"],
 }
 
 # Grid Search
-grid = GridSearchCV(LogisticRegression(random_state=42, max_iter=1000), param_grid, cv=5, scoring='accuracy', verbose=1)
+grid = GridSearchCV(
+    LogisticRegression(random_state=42, max_iter=1000),
+    param_grid,
+    cv=5,
+    scoring="accuracy",
+    verbose=1,
+)
 grid.fit(X_train_orig, y_train_orig)
 
 print("Best Parameters:", grid.best_params_)
@@ -294,7 +340,10 @@ y_pred_best = grid.best_estimator_.predict(X_test_orig)
 
 # Final evaluation
 print("\nBest Model Accuracy:", accuracy_score(y_test_orig, y_pred_best))
-print("\nBest Model Classification Report:\n", classification_report(y_test_orig, y_pred_best))
+print(
+    "\nBest Model Classification Report:\n",
+    classification_report(y_test_orig, y_pred_best),
+)
 
 # Visualization
 
@@ -303,24 +352,32 @@ print("\nBest Model Classification Report:\n", classification_report(y_test_orig
 import matplotlib.pyplot as plt
 
 # Results you have
-train_accuracy = 0.813  # After tuning 
+train_accuracy = 0.813  # After tuning
 test_accuracy = 0.8127  # Slight rounding
 
 # Creating a bar chart
 fig, ax = plt.subplots(figsize=(6, 4))
-bars = ax.bar(['Training Accuracy', 'Testing Accuracy'], [train_accuracy, test_accuracy], color=['skyblue', 'lightgreen'])
+bars = ax.bar(
+    ["Training Accuracy", "Testing Accuracy"],
+    [train_accuracy, test_accuracy],
+    color=["skyblue", "lightgreen"],
+)
 
 # Add text labels on bars
 for bar in bars:
     height = bar.get_height()
-    ax.annotate(f'{height:.3f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                xytext=(0, 3),  
-                textcoords="offset points",
-                ha='center', va='bottom')
+    ax.annotate(
+        f"{height:.3f}",
+        xy=(bar.get_x() + bar.get_width() / 2, height),
+        xytext=(0, 3),
+        textcoords="offset points",
+        ha="center",
+        va="bottom",
+    )
 
 ax.set_ylim(0, 1)
-ax.set_title('Training vs. Testing Accuracy for Logistic Regression')
-ax.set_ylabel('Accuracy')
+ax.set_title("Training vs. Testing Accuracy for Logistic Regression")
+ax.set_ylabel("Accuracy")
 plt.show()
 
 # Visualization
@@ -332,7 +389,7 @@ cm = confusion_matrix(y_test_orig, y_pred_best)
 
 # Displaying the confusion matrix
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=lr.classes_)
-disp.plot(cmap='Blues')
+disp.plot(cmap="Blues")
 plt.title("Confusion Matrix for Logistic Regression")
 plt.show()
 
@@ -345,15 +402,78 @@ import pandas as pd
 report = classification_report(y_test_orig, y_pred_best, output_dict=True)
 df_report = pd.DataFrame(report).transpose()
 
-plt.figure(figsize=(8,6))
-sns.heatmap(df_report.iloc[:-1, :-1], annot=True, cmap='Blues')
-plt.title('Classification Report Heatmap for Logistic Regression')
+plt.figure(figsize=(8, 6))
+sns.heatmap(df_report.iloc[:-1, :-1], annot=True, cmap="Blues")
+plt.title("Classification Report Heatmap for Logistic Regression")
 plt.show()
 
 # %% [markdown]
-# # Model 2
+# # Model 2: SVM Model Building & Hyperparameter Tuning
 
-# %%
+# %% [markdown]
+# ## Step 1: Build and Train the Model
 
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+# Initialize SVM model
+svm_model = SVC(random_state=42)
+
+# Train the model on 70% of the data (encoded labels)
+svm_model.fit(X_train_enc, y_train_enc)
+
+# Predict on the test set (30% of the data)
+y_pred_svm = svm_model.predict(X_test_enc)
+
+# Evaluate the model
+print("SVM Model Accuracy (Before Tuning):", accuracy_score(y_test_enc, y_pred_svm))
+print(
+    "\nClassification Report (Before Tuning):\n",
+    classification_report(y_test_enc, y_pred_svm, target_names=le.classes_),
+)
+
+# %% [markdown]
+# ## Step 2: Hyperparameter Tuning
+
+# Define the parameter grid for SVM
+param_grid_svm = {
+    "C": [0.1, 1, 10],
+    "kernel": ["linear", "rbf", "poly"],
+    "gamma": ["scale", "auto"],
+}
+
+# Perform Grid Search with 5-fold cross-validation
+grid_svm = GridSearchCV(
+    SVC(random_state=42), param_grid_svm, cv=5, scoring="accuracy", verbose=1
+)
+grid_svm.fit(X_train_enc, y_train_enc)
+
+# Best parameters and best score
+print("\nBest Parameters for SVM:", grid_svm.best_params_)
+print("Best Cross-Validation Accuracy:", grid_svm.best_score_)
+
+# %% [markdown]
+# ## Step 3: Test the Best Model
+
+# Use the best model to predict on the test set
+best_svm_model = grid_svm.best_estimator_
+y_pred_best_svm = best_svm_model.predict(X_test_enc)
+
+# Evaluate the best model
+print(
+    "\nSVM Model Accuracy (After Tuning):", accuracy_score(y_test_enc, y_pred_best_svm)
+)
+print(
+    "\nClassification Report (After Tuning):\n",
+    classification_report(y_test_enc, y_pred_best_svm, target_names=le.classes_),
+)
+
+# Confusion Matrix
+cm_svm = confusion_matrix(y_test_enc, y_pred_best_svm)
+disp_svm = ConfusionMatrixDisplay(confusion_matrix=cm_svm, display_labels=le.classes_)
+disp_svm.plot(cmap="Blues")
+plt.title("Confusion Matrix for SVM (After Tuning)")
+plt.show()
 
 
