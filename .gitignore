@@ -1,0 +1,7 @@
+.ipynb_checkpoints/
+*.ipynb~
+*.orig
+AMAZON_FASHION_5.json
+AMAZON_FASHION.json
+# Ignore large files
+size:100000
