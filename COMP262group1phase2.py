@@ -8,7 +8,18 @@
 #GROUP 1 (AMAZON FASHION)
 
 
-# In[1]:
+# In[2]:
+
+
+import time
+import datetime
+
+# Record the start time
+notebook_start_time = time.time()
+print(f"Notebook execution started at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+
+# In[3]:
 
 
 import pandas as pd
@@ -23,7 +34,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 # # Data Exploration & Preprocessing
 
-# In[2]:
+# In[4]:
 
 
 # loading a subset of the full dataset
@@ -113,7 +124,7 @@ print(df.head(10))
 
 # # Text Representation & Data Splitting
 
-# In[3]:
+# In[5]:
 
 
 # Check class distribution
@@ -129,7 +140,7 @@ plt.xticks(rotation=0)
 plt.show()
 
 
-# In[4]:
+# In[6]:
 
 
 # Text Representation
@@ -141,22 +152,7 @@ X = vectorizer.fit_transform(df["reviewText"])
 y_orig = df['sentiment']
 
 
-# In[5]:
-
-
-# # Another vectorizer if you want to experiment
-
-# from sklearn.feature_extraction.text import CountVectorizer
-
-# # Apply Count Vectorizer
-# vectorizer = CountVectorizer(max_features=5000)
-# X = vectorizer.fit_transform(df["reviewText"])  # Convert text data into features
-
-# # Original labels (non-encoded)
-# y_orig = df['sentiment']
-
-
-# In[6]:
+# In[7]:
 
 
 # Encode labels for models like XGBoost, MLP, etc.
@@ -175,7 +171,7 @@ X_train_orig, X_test_orig, y_train_orig, y_test_orig = train_test_split(X, y_ori
 # 2. Original splits: X_train_orig, X_test_orig, y_train_orig, y_test_orig
 
 
-# In[7]:
+# In[8]:
 
 
 from imblearn.over_sampling import SMOTE
@@ -203,7 +199,7 @@ print(f"Total samples after SMOTE: {X_train_enc_smote.shape[0]}")
 
 # # Gradient Boost (extra model, can remove later)
 
-# In[8]:
+# In[9]:
 
 
 # Gradient Boosting Classifier using sklearn WITHOUT SMOTE
@@ -225,7 +221,7 @@ print("\nGradient Boosting Classifier Accuracy:")
 print(gb_model.score(X_test_enc, y_test_enc))
 
 
-# In[9]:
+# In[10]:
 
 
 # Train with SMOTE-balanced training data
@@ -242,12 +238,6 @@ print(confusion_matrix(y_test_enc, y_pred_smote))
 
 print("\nGradient Boosting Classifier Accuracy (With SMOTE):")
 print(gb_model_smote.score(X_test_enc, y_test_enc))
-
-
-# In[10]:
-
-
-#!pip install xgboost
 
 
 # In[11]:
@@ -536,10 +526,11 @@ summarizer = pipeline("summarization", model="google/flan-t5-base", device=0)  #
 
 # # summarization
 
-# In[25]:
+# In[ ]:
 
 
-# Apply summarization
+# # Apply summarization
+
 summaries = []
 
 for i, row in selected_long_reviews.iterrows():
@@ -551,8 +542,14 @@ for i, row in selected_long_reviews.iterrows():
 # Add to DataFrame
 selected_long_reviews['summary'] = summaries
 
-# Display first two as required in report
-selected_long_reviews[['reviewText', 'summary']].head(2)
+# Add word count and character count for review and summary
+selected_long_reviews['review_word_count'] = selected_long_reviews['reviewText'].apply(lambda x: len(x.split()))
+selected_long_reviews['review_char_count'] = selected_long_reviews['reviewText'].apply(len)
+selected_long_reviews['summary_word_count'] = selected_long_reviews['summary'].apply(lambda x: len(x.split()))
+selected_long_reviews['summary_char_count'] = selected_long_reviews['summary'].apply(len)
+
+# Display all columns including full text and summary, and counts
+print(selected_long_reviews.head())
 
 
 # ### 🔍 Select a Question-Like Review for Customer Response
@@ -588,7 +585,7 @@ question_df['reviewText'].head(3).to_list()
 # We dynamically inject customer complaint into each prompt using real user reviews.
 # 
 
-# In[36]:
+# In[27]:
 
 
 # Use N already extracted question-like reviews
@@ -607,7 +604,7 @@ for q in sample_questions:
 # Great instruction-following small LLM. Outputs are helpful and polite.
 # 
 
-# In[37]:
+# In[28]:
 
 
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -630,7 +627,7 @@ for i, customer_text in enumerate(sample_questions):
 # Helps avoid CUDA OOM errors when switching large models.
 # 
 
-# In[39]:
+# In[29]:
 
 
 import gc
@@ -648,7 +645,7 @@ print("✅ Model A cleared from memory.")
 # Smaller instruction model — good for fallback or fast inference.
 # 
 
-# In[40]:
+# In[30]:
 
 
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -671,7 +668,7 @@ for i, customer_text in enumerate(sample_questions):
 # This model generates human-like completions and can handle conversational tone.
 # 
 
-# In[43]:
+# In[31]:
 
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -699,7 +696,7 @@ for i, customer_text in enumerate(sample_questions):
 # Includes: LaMini, Flan-T5, Falcon-RW-1B responses to same questions.
 # 
 
-# In[44]:
+# In[32]:
 
 
 import pandas as pd
@@ -729,7 +726,7 @@ df_responses.head()
 
 #  Load Lexicon predictions
 
-# In[28]:
+# In[33]:
 
 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -757,7 +754,7 @@ textblob_preds = [textblob_sentiment(text) for text in review_texts]
 # Used for reporting and metric evaluation.
 # 
 
-# In[29]:
+# In[34]:
 
 
 # Combine all model predictions
@@ -777,7 +774,7 @@ df_compare.head()
 # We calculate accuracy, precision, recall, and F1 scores.
 # 
 
-# In[33]:
+# In[35]:
 
 
 from sklearn.preprocessing import LabelEncoder
@@ -789,7 +786,7 @@ le.fit(df_compare["True Label"])  # Corrected reference
 df_compare["SVM"] = le.inverse_transform(df_compare["SVM"])
 
 
-# In[34]:
+# In[36]:
 
 
 from sklearn.metrics import classification_report
@@ -810,7 +807,7 @@ for model in models:
 # We applied this method by calculating a weighted average of the actual user rating and the sentiment-inferred score (from our sentiment classification models). This post-filtered rating serves as an improved score input for recommender logic.
 # 
 
-# In[40]:
+# In[37]:
 
 
 # Convert sentiment predictions to numeric scores
@@ -831,7 +828,7 @@ def label_to_rating(label):
 df_compare["Real_Rating"] = df.iloc[test_indices]["sentiment"].apply(label_to_rating).tolist()
 
 
-# In[41]:
+# In[38]:
 
 
 # Linear combination (adjust alpha as needed)
@@ -845,7 +842,7 @@ df_compare["Combined_TextBlob"] = alpha * df_compare["Real_Rating"] + (1 - alpha
 df_compare[["Real_Rating", "LogReg_Score", "Combined_LogReg", "Combined_SVM"]].head()
 
 
-# In[42]:
+# In[39]:
 
 
 import matplotlib.pyplot as plt
@@ -861,7 +858,7 @@ plt.grid(True)
 plt.show()
 
 
-# In[43]:
+# In[40]:
 
 
 df_compare.to_csv("enhanced_ratings_postfilter.csv", index=False)
@@ -872,3 +869,27 @@ print("✅ Saved as enhanced_ratings_postfilter.csv")
 # - `customer_llm_responses.csv` – LLM-generated replies
 # - `sentiment_model_comparison.csv` – All model predictions
 # - `enhanced_ratings_postfilter.csv` – Post-filtered ratings for recommender use
+
+# In[41]:
+
+
+# Record the end time
+notebook_end_time = time.time()
+print(f"\nNotebook execution finished at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+# Calculate the duration
+elapsed_seconds = notebook_end_time - notebook_start_time
+
+# Format the duration (optional, for better readability)
+elapsed_timedelta = datetime.timedelta(seconds=elapsed_seconds)
+
+print(f"\nTotal Notebook execution time: {elapsed_timedelta}")
+# Or just print seconds
+# print(f"\nTotal Notebook execution time: {elapsed_seconds:.2f} seconds")
+
+
+# In[ ]:
+
+
+
+

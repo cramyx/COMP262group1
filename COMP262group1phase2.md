@@ -5,6 +5,19 @@
 
 
 ```python
+import time
+import datetime
+
+# Record the start time
+notebook_start_time = time.time()
+print(f"Notebook execution started at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+```
+
+    Notebook execution started at: 2025-04-16 15:22:03
+
+
+
+```python
 import pandas as pd
 import numpy as np
 import json
@@ -168,19 +181,19 @@ print(df.head(10))
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_3_1.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_4_1.png)
     
 
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_3_2.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_4_2.png)
     
 
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_3_3.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_4_3.png)
     
 
 
@@ -227,7 +240,7 @@ plt.show()
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_5_1.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_6_1.png)
     
 
 
@@ -240,20 +253,6 @@ X = vectorizer.fit_transform(df["reviewText"])
 
 # Original labels (non-encoded)
 y_orig = df['sentiment']
-```
-
-
-```python
-# # Another vectorizer if you want to experiment
-
-# from sklearn.feature_extraction.text import CountVectorizer
-
-# # Apply Count Vectorizer
-# vectorizer = CountVectorizer(max_features=5000)
-# X = vectorizer.fit_transform(df["reviewText"])  # Convert text data into features
-
-# # Original labels (non-encoded)
-# y_orig = df['sentiment']
 ```
 
 
@@ -391,11 +390,6 @@ print(gb_model_smote.score(X_test_enc, y_test_enc))
 
 
 ```python
-#!pip install xgboost
-```
-
-
-```python
 # Gradient Boosting Classifier using XGBoost WITHOUT SMOTE
 from xgboost import XGBClassifier
 
@@ -418,7 +412,7 @@ print("\nXGBoost Classifier Accuracy (Without SMOTE):")
 print(xgb_model.score(X_test_orig, y_test_enc))  # Use encoded labels for score calculation
 ```
 
-    /home/sgidy/nlpphase2/sentiment-nlp/lib/python3.12/site-packages/xgboost/training.py:183: UserWarning: [21:15:23] WARNING: /workspace/src/learner.cc:738: 
+    /home/sgidy/nlpphase2/sentiment-nlp/lib/python3.12/site-packages/xgboost/training.py:183: UserWarning: [15:22:43] WARNING: /workspace/src/learner.cc:738: 
     Parameters: { "use_label_encoder" } are not used.
     
       bst.update(dtrain, iteration=i, fobj=obj)
@@ -465,7 +459,7 @@ print("\nXGBoost Classifier Accuracy (With SMOTE):")
 print(xgb_model_smote.score(X_test_orig, y_test_enc))  # Use encoded labels for score calculation
 ```
 
-    /home/sgidy/nlpphase2/sentiment-nlp/lib/python3.12/site-packages/xgboost/training.py:183: UserWarning: [21:15:24] WARNING: /workspace/src/learner.cc:738: 
+    /home/sgidy/nlpphase2/sentiment-nlp/lib/python3.12/site-packages/xgboost/training.py:183: UserWarning: [15:22:45] WARNING: /workspace/src/learner.cc:738: 
     Parameters: { "use_label_encoder" } are not used.
     
       bst.update(dtrain, iteration=i, fobj=obj)
@@ -606,7 +600,7 @@ plt.show()
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_21_0.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_20_0.png)
     
 
 
@@ -628,7 +622,7 @@ plt.show()
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_22_0.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_21_0.png)
     
 
 
@@ -651,7 +645,7 @@ plt.show()
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_23_0.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_22_0.png)
     
 
 
@@ -770,7 +764,7 @@ plt.show()
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_30_1.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_29_1.png)
     
 
 
@@ -831,7 +825,8 @@ summarizer = pipeline("summarization", model="google/flan-t5-base", device=0)  #
 
 
 ```python
-# Apply summarization
+# # Apply summarization
+
 summaries = []
 
 for i, row in selected_long_reviews.iterrows():
@@ -843,51 +838,37 @@ for i, row in selected_long_reviews.iterrows():
 # Add to DataFrame
 selected_long_reviews['summary'] = summaries
 
-# Display first two as required in report
-selected_long_reviews[['reviewText', 'summary']].head(2)
+# Add word count and character count for review and summary
+selected_long_reviews['review_word_count'] = selected_long_reviews['reviewText'].apply(lambda x: len(x.split()))
+selected_long_reviews['review_char_count'] = selected_long_reviews['reviewText'].apply(len)
+selected_long_reviews['summary_word_count'] = selected_long_reviews['summary'].apply(lambda x: len(x.split()))
+selected_long_reviews['summary_char_count'] = selected_long_reviews['summary'].apply(len)
+
+# Display all columns including full text and summary, and counts
+print(selected_long_reviews.head())
 
 ```
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>reviewText</th>
-      <th>summary</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>i had used my last elcheapo fake leather cigar...</td>
-      <td>i had used my last elcheapo fake leather cigar...</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>lining in lighter pocket tore within a very sh...</td>
-      <td>lining in lighter pocket tore within a very sh...</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
+                                              reviewText sentiment  \
+    0  i had used my last elcheapo fake leather cigar...   Neutral   
+    1  lining in lighter pocket tore within a very sh...   Neutral   
+    2  i had been looking for a replacement for a cig...  Positive   
+    3  below average for the money  the button holes ...  Negative   
+    4  i was looking at the previous review and i thi...  Positive   
+    
+                                                 summary  review_word_count  \
+    0  i had used my last elcheapo fake leather cigar...                181   
+    1  lining in lighter pocket tore within a very sh...                122   
+    2  i had been looking for a replacement for cigar...                131   
+    3  i have no doubt it will shrink badly if washed...                112   
+    4  i think they missed the boat on this one in fa...                150   
+    
+       review_char_count  summary_word_count  summary_char_count  
+    0                903                  33                 168  
+    1                675                  26                 138  
+    2                653                  21                 113  
+    3                584                  27                 138  
+    4                767                  52                 237  
 
 
 ### 🔍 Select a Question-Like Review for Customer Response
@@ -1037,40 +1018,6 @@ for i, customer_text in enumerate(sample_questions):
 
 ```
 
-
-    tokenizer_config.json:   0%|          | 0.00/2.54k [00:00<?, ?B/s]
-
-
-    Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
-
-
-
-    spiece.model:   0%|          | 0.00/792k [00:00<?, ?B/s]
-
-
-
-    tokenizer.json:   0%|          | 0.00/2.42M [00:00<?, ?B/s]
-
-
-
-    special_tokens_map.json:   0%|          | 0.00/2.20k [00:00<?, ?B/s]
-
-
-
-    config.json:   0%|          | 0.00/1.40k [00:00<?, ?B/s]
-
-
-    Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
-
-
-
-    model.safetensors:   0%|          | 0.00/308M [00:00<?, ?B/s]
-
-
-
-    generation_config.json:   0%|          | 0.00/147 [00:00<?, ?B/s]
-
-
     🧠 Responses from flan-t5-small:
     
     🔸Q1: dont like it it will not hold my cigarettes not long enough
@@ -1126,8 +1073,7 @@ for i, customer_text in enumerate(sample_questions):
 
     
     🦅 Q1: dont like it it will not hold my cigarettes not long enough
-    💬 Response: for me so im going to send you a return and get a refund on my card.
-    You can also send our customer service team an email by clicking here. You can also contact one of our customer service representatives by calling 888-817-9797 (TTY: 711)
+    💬 Response: it has small chambers it does not hold all my cigarettes, I do not like how it does not hold the tobacco like there should be it does not fit in my cigarettes that is why I do not like it, I have to put them in a separate box and I have to keep it with me
 
 
     The attention mask and the pad token id were not set. As a consequence, you may observe unexpected behavior. Please pass your input's `attention_mask` to obtain reliable results.
@@ -1136,19 +1082,15 @@ for i, customer_text in enumerate(sample_questions):
 
     
     🦅 Q2: does not hold 120s to small for a lighter
-    💬 Response: person. I have a small frame and my torso is only about 17-18" around. I found the product to be very comfortable and I can't wait to use it.
-    - Was this a gift?:
-    - No
-    Questions & Answers
-    - Q:
-    - A:
-    Hello
+    💬 Response: /short person. What do you recommend. Thanks for your help.
+    Product Information:I went to the hospital yesterday for my first ever ultrasound. The doctor was very happy to see how much my baby was growing and how well developed my organs were. Unfortunately, I won’t be
     
     🦅 Q3: is very small doesnt  fit my smokes
-    💬 Response: .
-    I wish I could return it. I’m really disappointed about this.
-    Hi, I bought this product on May 27 at 5:23 pm. I’m really disappointed about this product.
-    I wish I could return it. I’m really disappointed about this
+    💬 Response: and I have to return the product.
+    2.
+    I bought the item from a merchant: I bought it from a merchant. The merchant is responsible for delivery.
+    3.
+    I bought it from the internet: I bought it from the internet. The internet is not responsible for delivery.
 
 
 ### 📁 Save Summarized Customer Responses to CSV
@@ -1219,21 +1161,21 @@ df_responses.head()
       <td>dont like it it will not hold my cigarettes no...</td>
       <td>I'm sorry to hear that. Can you please provide...</td>
       <td>I am not sure what the problem is. I am not su...</td>
-      <td>for me so im going to send you a return and ge...</td>
+      <td>it has small chambers it does not hold all my ...</td>
     </tr>
     <tr>
       <th>1</th>
       <td>does not hold 120s to small for a lighter</td>
       <td>I'm sorry to hear that. Can you please provide...</td>
       <td>i am not sure if it is a light or a light.</td>
-      <td>person. I have a small frame and my torso is o...</td>
+      <td>/short person. What do you recommend. Thanks f...</td>
     </tr>
     <tr>
       <th>2</th>
       <td>is very small doesnt  fit my smokes</td>
       <td>I'm sorry to hear that. Can you please provide...</td>
       <td>No, it is not good.</td>
-      <td>.\nI wish I could return it. I’m really disapp...</td>
+      <td>and I have to return the product.\n2.\nI bough...</td>
     </tr>
   </tbody>
 </table>
@@ -1577,7 +1519,7 @@ plt.show()
 
 
     
-![png](COMP262group1phase2_files/COMP262group1phase2_61_0.png)
+![png](COMP262group1phase2_files/COMP262group1phase2_60_0.png)
     
 
 
@@ -1595,3 +1537,31 @@ print("✅ Saved as enhanced_ratings_postfilter.csv")
 - `customer_llm_responses.csv` – LLM-generated replies
 - `sentiment_model_comparison.csv` – All model predictions
 - `enhanced_ratings_postfilter.csv` – Post-filtered ratings for recommender use
+
+
+```python
+# Record the end time
+notebook_end_time = time.time()
+print(f"\nNotebook execution finished at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+# Calculate the duration
+elapsed_seconds = notebook_end_time - notebook_start_time
+
+# Format the duration (optional, for better readability)
+elapsed_timedelta = datetime.timedelta(seconds=elapsed_seconds)
+
+print(f"\nTotal Notebook execution time: {elapsed_timedelta}")
+# Or just print seconds
+# print(f"\nTotal Notebook execution time: {elapsed_seconds:.2f} seconds")
+```
+
+    
+    Notebook execution finished at: 2025-04-16 15:31:50
+    
+    Total Notebook execution time: 0:09:46.950585
+
+
+
+```python
+
+```
